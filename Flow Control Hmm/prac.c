@@ -1,47 +1,57 @@
 #include<stdio.h>
 #include<stdlib.h>
-#include<time.h>
 #include<windows.h>
-#define MAX_FRAMES 100
+#include<time.h>
+#define TIMEOUT 2
 int is_success(){
-    return rand() % 100 < 70; // 70% chance of success
+    return (rand() % 100) < 70;
 }
 int main(){
     int total_frames, window_size;
-    int sender_acked[MAX_FRAMES] = {0};
-    int receiver_buffer[MAX_FRAMES] = {0};
     int base = 0;
-    srand(time(NULL));
-    printf("Enter total frames: ");
-    scanf("%d", &total_frames);
+    int next_seq_num = 0;
+    srand(time(0));
+    printf("Enter total number of frames: ");
+    scanf("%d",&total_frames);
     printf("Enter window size: ");
-    scanf("%d", &window_size);
-    printf("\n---- Selective Repeat Simulation ----\n");
+    scanf("%d",&window_size);
+    printf("\n------ GO BACK N SIMULATION START ------\n\n");
     while(base < total_frames){
-        for(int i=base; i < base + window_size && i < total_frames; i++){
-            if(!sender_acked[i]){
-                printf("Sender: Sending Frame [%d]\n", i);
-                if(is_success()){
-                    printf(" -> [Receiver]: Received Frame [%d]\n", i);
-                    receiver_buffer[i] = 1;
-                    if(is_success()){
-                        printf(" <- [Sender]: Ack for Frame [%d] received\n", i);
-                        sender_acked[i] = 1;
-                    } else{
-                        printf(" -< [Sender]: Ack for Frame [%d] LOST\n", i);
-                    }
-                } else{
-                    printf(" -> [Receiver]: Data LOST [%d]\n", i);
-                }
+        while(next_seq_num < base + window_size && next_seq_num < total_frames){
+            printf("Sender: Sending Frame [%d]\n", next_seq_num);
+            next_seq_num++;
+        }
+        printf("Timer started for Frame [%d]\n", base);
+        Sleep(TIMEOUT * 1000);
+        int receiver_expected = base;
+        int last_ack = base;
+        for(int i=base; i<next_seq_num; i++){
+            if(is_success()){
+                printf("Receiver: Frame [%d] received\n", i);
+                receiver_expected++;
+                last_ack = receiver_expected;
+            }
+            else{
+                printf("Receiver: Frame [%d] LOST\n", i);
+                break;
             }
         }
-        while(base < total_frames && sender_acked[base]){
-            printf("--- Window Slide FWD! Frame [%d] is now RECEIVED ---\n", base);
-            base++;
+        if(last_ack > base){
+            if(is_success()){
+                printf("Sender: ACK received upto Frame [%d]\n", last_ack - 1);
+                base = last_ack;
+            }
+            else{
+                printf("ACK LOST! Timeout will occur\n");
+            }
         }
-        printf("-----------------------------------------------\n");
-        Sleep(1);
+        if(base < next_seq_num){
+            printf("TIMEOUT! Go Back N triggered\n");
+            printf("Retransmitting from Frame [%d]\n", base);
+            next_seq_num = base;
+        }
+        printf("----------\n");
     }
-    printf("\nSUCCESS: All %d frames delivered and confirmed.\n", total_frames);
+    printf("\nAll frames successfully transmitted!\n");
     return 0;
 }

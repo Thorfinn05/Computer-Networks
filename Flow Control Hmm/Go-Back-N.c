@@ -1,68 +1,82 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-// #include <unistd.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
 #include<windows.h>
+#define TIMEOUT 2
+// #define DATA_PROB 70
+// #define ACK_PROB 70
 
-#define TIMEOUT 1
-
-void send_window(int base, int window_size, int total_frames) {
-    printf("Sender: Sending Frames -> ");
-    for (int i = 0; i < window_size && (base + i) < total_frames; i++) {
-        printf("[%d] ", base + i);
-    }
-    printf("\n");
+int is_success(){
+    return (rand() % 100) < 70;
 }
 
-int main() {
-    int window_size, total_frames;
-    int base = 0; // The first unacknowledged frame
-    int next_frame = 0; 
+int main(){
 
-    srand(time(NULL));
+    int total_frames, window_size;
+    int base = 0;
+    int next_seq_num = 0;
+
+    srand(time(0));
 
     printf("Enter total number of frames: ");
-    scanf("%d", &total_frames);
+    scanf("%d",&total_frames);
+
     printf("Enter window size: ");
-    scanf("%d", &window_size);
+    scanf("%d",&window_size);
 
-    printf("\n--- Starting Go-Back-N ARQ Simulation ---\n\n");
+    printf("\n------ GO BACK N SIMULATION START ------\n\n");
 
-    while (base < total_frames) {
-        // 1. Send the current window
-        send_window(base, window_size, total_frames);
+    while(base < total_frames){
 
-        // 2. Simulate network behavior (Random ACK)
-        // We simulate that 'n' frames were received correctly before an error occurs
-        int frames_received_ok = rand() % (window_size + 1);
-        
-        // Ensure we don't "receive" more frames than are actually in the current window
-        if (base + frames_received_ok > total_frames) {
-            frames_received_ok = total_frames - base;
+        // 1️⃣ Send frames until window is full
+        while(next_seq_num < base + window_size && next_seq_num < total_frames){
+            printf("Sender: Sending Frame %d\n", next_seq_num);
+            next_seq_num++;
         }
 
-        Sleep(TIMEOUT); // Simulate propagation delay
+        // 2️⃣ Start single timer for base frame
+        printf("Timer started for Frame %d\n", base);
+        Sleep(TIMEOUT * 1000);
 
-        if (frames_received_ok == window_size || (base + frames_received_ok == total_frames)) {
-            // Success Case
-            printf("Receiver: All frames in window acknowledged.\n");
-            base += frames_received_ok;
-        } 
-        else if (frames_received_ok == 0) {
-            // Total Failure Case
-            printf("Receiver: TIMEOUT! No ACKs received. Resending from [%d]\n", base);
-        } 
-        else {
-            // Partial Success / GBN Case
-            printf("Receiver: ACK received up to [%d]. Frame [%d] was lost/corrupted.\n", 
-                    base + frames_received_ok - 1, base + frames_received_ok);
-            printf("Sender: Go-Back-N logic triggered. Resending window from [%d]\n", base + frames_received_ok);
-            base += frames_received_ok;
+        // 3️⃣ Simulate receiver behavior
+        int receiver_expected = base;
+        int last_ack = base;
+
+        for(int i = base; i < next_seq_num; i++){
+
+            if(is_success()){
+                printf("Receiver: Frame %d received correctly\n", i);
+                receiver_expected++;
+                last_ack = receiver_expected;
+            }
+            else{
+                printf("Receiver: Frame %d LOST!\n", i);
+                break;  // GBN stops at first loss
+            }
         }
 
-        printf("--------------------------------------------------\n");
+        // 4️⃣ Simulate ACK transmission
+        if(last_ack > base){
+
+            if(is_success()){
+                printf("Sender: ACK received up to %d (Cumulative)\n", last_ack - 1);
+                base = last_ack;
+            }
+            else{
+                printf("ACK LOST! Timeout will occur.\n");
+            }
+        }
+
+        // 5️⃣ Timeout condition
+        if(base < next_seq_num){
+            printf("TIMEOUT! Go-Back-N triggered.\n");
+            printf("Retransmitting from Frame %d\n", base);
+            next_seq_num = base;  // Go back
+        }
+
+        printf("------------------------------------------\n");
     }
 
-    printf("SUCCESS: All %d frames sent and acknowledged.\n", total_frames);
+    printf("\nAll frames successfully transmitted!\n");
     return 0;
 }
