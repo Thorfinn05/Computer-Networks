@@ -43,7 +43,6 @@ int main() {
                     // --- STEP B: REVERSE PATH (ACK) ---
                     if (is_success(ack_chance)) {
                         printf("  <- [Sender]: Received ACK for Frame [%d].\n", i);
-                        Sleep(TIMEOUT * 500); // Readability delay
                         sender_acked[i] = 1;
                     } else {
                         printf("  <- [Sender]: ACK for Frame [%d] LOST!\n", i);
