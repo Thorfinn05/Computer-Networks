@@ -47,11 +47,11 @@ int main() {
                         sender_acked[i] = 1;
                     } else {
                         printf("  <- [Sender]: ACK for Frame [%d] LOST!\n", i);
-                        printf("  <- [Sender]: Will retransmit Frame[%d]\n", i);
+                        printf("  <- [Sender]: Will retransmit Frame [%d]\n", i);
                     }
                 } else {
                     printf("  -> [Receiver]: Frame [%d] DATA LOST!\n", i);
-                    printf("  <- [Sender]: Will retransmit Frame[%d]\n", i);
+                    printf("  <- [Sender]: Will retransmit Frame [%d]\n", i);
                 }
             }
             printf("\n");
