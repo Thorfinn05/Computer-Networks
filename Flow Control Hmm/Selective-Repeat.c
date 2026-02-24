@@ -1,51 +1,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+// #include <unistd.h> // Using unistd.h for Ubuntu
 #include<windows.h>
-// #include <unistd.h> // Replacement for windows.h
-
 #define MAX_FRAMES 100
+
+// Helper to simulate a percentage chance of success
+int is_success(int probability) {
+    return (rand() % 100) < probability;
+}
 
 int main() {
     int total_frames, window_size;
-    int acked[MAX_FRAMES] = {0}; // Track individual ACKs
-    int base = 0; // The start of the window
+    int sender_acked[MAX_FRAMES] = {0};   // Sender's knowledge
+    int receiver_buffered[MAX_FRAMES] = {0}; // Receiver's actual storage
+    int base = 0;
+    
+    int data_chance = 70; // 70% chance data arrives
+    int ack_chance = 70;  // 70% chance ACK arrives
 
     srand(time(NULL));
 
-    printf("Enter total number of frames: ");
+    printf("Enter total frames: ");
     scanf("%d", &total_frames);
     printf("Enter window size: ");
     scanf("%d", &window_size);
 
-    printf("\n----- Starting Selective Repeat Simulation -----\n");
+    printf("\n--- Selective Repeat: Data vs ACK Loss Simulation ---\n\n");
 
     while (base < total_frames) {
-        // 1. "Send" all frames in the current window that haven't been ACKed yet
+        // 1. Sender sends everything in the current window that isn't ACKed
         for (int i = base; i < base + window_size && i < total_frames; i++) {
-            if (!acked[i]) {
+            if (!sender_acked[i]) {
                 printf("Sender: Sending Frame [%d]\n", i);
                 
-                // Simulate Receiver/Network (50% chance of success)
-                if (rand() % 2) {
-                    printf("Receiver: Frame [%d] received, sending ACK.\n", i);
-                    acked[i] = 1;
+                // --- STEP A: FORWARD PATH (DATA) ---
+                if (is_success(data_chance)) {
+                    printf("  -> [Receiver]: Received Frame [%d] successfully.\n", i);
+                    receiver_buffered[i] = 1; // Receiver now has it
+
+                    // --- STEP B: REVERSE PATH (ACK) ---
+                    if (is_success(ack_chance)) {
+                        printf("  <- [Sender]: Received ACK for Frame [%d].\n", i);
+                        sender_acked[i] = 1;
+                    } else {
+                        printf("  <- [Sender]: ACK for Frame [%d] LOST!\n", i);
+                    }
                 } else {
-                    printf("Receiver: Frame [%d] lost/corrupted!\n", i);
+                    printf("  -> [Receiver]: Frame [%d] DATA LOST!\n", i);
                 }
             }
         }
 
-        // 2. "Slide" the window: Move base forward as long as the frames are ACKed
-        while (base < total_frames && acked[base]) {
-            printf("Window Slid: Frame [%d] confirmed.\n", base);
+        // 2. Window Sliding Logic
+        // The window only slides if the 'base' frame is confirmed at the SENDER
+        while (base < total_frames && sender_acked[base]) {
+            printf("--- Window Slid Forward! Frame [%d] is now the bottom boundary ---\n", base);
             base++;
         }
 
-        printf("--------------------------------------------\n");
-        Sleep(1); // Delay for readability
+        printf("--------------------------------------------------\n");
+        Sleep(1); // Readability delay
     }
 
-    printf("SUCCESS: All frames received.\n");
+    printf("\nSUCCESS: All %d frames delivered and confirmed.\n", total_frames);
     return 0;
 }
