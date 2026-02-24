@@ -25,7 +25,7 @@ int main(){
         Sleep(TIMEOUT * 1000);
         int receiver_expected = base;
         int last_ack = base;
-        for(int i=base; i<next_seq_num; i++){
+        for(int i=base; i< next_seq_num; i++){
             if(is_success()){
                 printf("Receiver: Frame [%d] received\n", i);
                 receiver_expected++;
