@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<time.h>
+// #include<unistd.h>
 #include<windows.h>
 #define TIMEOUT 2
 
@@ -28,6 +29,7 @@ int main(){
         int end = (base + window_size < total_frames) ? base + window_size : total_frames;
         send_frames(base, end);
         int ack = base + (rand() % (window_size + 1));
+        Sleep(TIMEOUT * 1000);
         if(ack >= end){
             printf("All frames in acknowledgement\n");
             base = end;
