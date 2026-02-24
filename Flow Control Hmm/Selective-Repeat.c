@@ -55,6 +55,7 @@ int main() {
             }
             printf("\n");
         }
+        Sleep(TIMEOUT * 1000); // Readability delay
 
         // 2. Window Sliding Logic
         // The window only slides if the 'base' frame is confirmed at the SENDER
@@ -64,7 +65,7 @@ int main() {
         }
 
         printf("\n-------------\n");
-        Sleep(TIMEOUT * 1000); // Readability delay
+        
     }
 
     printf("\nSUCCESS: All %d frames delivered and confirmed.\n", total_frames);
