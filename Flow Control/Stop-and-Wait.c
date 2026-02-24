@@ -44,13 +44,14 @@ int main(){
             if(state ==  WAITING_FOR_ACK){
                 Sleep(TIMEOUT * 1000);
                 if(simulate_error()){
-                    printf("Data Lost: Data %d, Seq %d\n", frame.data, frame.seq_num);
+                    printf("Ack Lost: Data %d, Seq %d\n", frame.data, frame.seq_num);
                     printf("Resending frame: Data %d, Seq %d\n", frame.data, frame.seq_num);
                     state = IDLE;
                 }
                 else{
-                    printf("Data Received: Data %d, Seq %d\n", frame.data, frame.seq_num);
+                    printf("Ack Received: Data %d, Seq %d\n", frame.data, frame.seq_num);
                     seq_num = 1 - seq_num;
+                    state = IDLE;
                     break;
                 }
             }
@@ -59,4 +60,3 @@ int main(){
     }
     return 0;
 }
-
