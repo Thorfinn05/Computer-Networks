@@ -1,81 +1,95 @@
 #include<stdio.h>
+#include<string.h>
+
+int data[100], divisor[20], remainder[20];
+int data_len, div_len;
+
+void xor(int a[], int b[], int len){
+    for(int i=0; i<len; i++){
+        a[i] = a[i] ^ b[i];
+    }
+}
+
+void crc_divide(int dividend[], int dlen){
+    int temp[20];
+    for(int i=0; i<div_len; i++){
+        temp[i] = dividend[i];
+    }
+    int pos = div_len;
+    while(pos <= dlen){
+        if(temp[0] == 1){
+            xor(temp, divisor, div_len);
+        } else{
+            int zeros[] = {0};
+            xor(temp, zeros, div_len);
+        }
+        if(pos < dlen){
+            for(int i=0; i<div_len; i++){
+                temp[i] = temp[i+1];
+            }
+            temp[div_len - 1] = dividend[pos];
+        }
+        pos++;
+    }
+    for(int i=0; i<div_len - 1; i++){
+        remainder[i] = temp[i+1];
+    }
+}
 
 int main(){
-    int n;
-    printf("Enter number of bits: ");
-    scanf("%d", &n);
+    char d[100], g[20];
+    printf("Enter data: ");
+    scanf("%s", d),
+    printf("Enter divisor: ");
+    scanf("%s", g);
 
-    int data[n], transmitted[n+1], received[n+1];
+    data_len = strlen(d);
+    div_len = strlen(g);
 
-    printf("PARITY GENERATOR\n");
-    int parity = 0;
-    printf("Enter %d databits(0 or 1): ", n);
-    for(int i=0; i<n; i++){
-        scanf("%1d", &data[i]);
-        transmitted[i] = data[i];
-        parity ^= data[i];
+    for(int i=0; i<data_len; i++) data[i] = d[i] - '0';
+    for(int i=0; i<div_len; i++) divisor[i] = g[i] - '0';
+
+    int crc_len = div_len - 1;
+    int augmented[20];
+
+    for(int i=0; i<data_len; i++) augmented[i] = data[i];
+    for(int i=0; i<crc_len; i++) augmented[data_len + i] = 0;
+
+    printf("Augmented data: ");
+    for(int i=0; i<data_len+crc_len; i++){
+        printf("%d", augmented[i]);
     }
 
-    int choice;
-    printf("Enter 1 for Even and 2 for Odd Parity: ");
-    scanf("%d", &choice);
-    if(choice == 1){
-        printf("Even chosen\n");
-    } else{
-        parity = 1-parity;
-        printf("Odd Chosen\n");
+    crc_divide(augmented, data_len+crc_len);
+    printf("\nCRC Remainder: ");
+    for(int i=0; i<crc_len; i++){
+        printf("%d", remainder[i]);
     }
-    printf("Actual Data: ");
-    for(int i=0; i<n; i++){
-        printf("%d", data[i]);
-    }
-    printf("\n");
 
-    printf("Transmitted Data: ");
-    transmitted[n] = parity;
-    for(int i=0; i<=n; i++){
+    int transmitted[20];
+    for(int i=0; i<data_len; i++) transmitted[i] = data[i];
+    for(int i=0; i<crc_len; i++) transmitted[data_len + i] = remainder[i];
+
+    printf("\nTransmitted data: ");
+    for(int i=0; i<data_len+crc_len; i++){
         printf("%d", transmitted[i]);
     }
-    printf("\n");
 
-    printf("\n---PARITY CHECKER---\n");
-    int rparity = 0;
-    // printf("Received Data: ");
-    // for(int i=0; i<=n; i++){
-    //    received[i] = transmitted[i];
-    //    printf("%d", received[i]);
-    // }
-    // printf("\n");
-    printf("Enter received %d bits (including parity bit): ", n+1);
-    for(int i=0; i<n+1; i++){
-        scanf("%1d", &received[i]);
-        // rparity ^= received[i];
-    }
-    int ones = 0;
-    for(int i=0; i<n+1; i++){
-        if(received[i] == 1){
-            ones++;
-        }
-    }
-    rparity = ones % 2;
-    int parity_type;
-    printf("Enter 1 if Eevn and 2 if Odd: \n");
-    scanf("%d", &parity_type);
+    crc_divide(transmitted, data_len + crc_len);
 
-    if(parity_type == 1){
-        if(rparity == 0){
-            printf("NO ERROR\n");
-        } else{
-            printf("ERROR\n");
-        }
-    } else if(parity_type == 2){
-        if(rparity == 0){
-            printf("ERROR\n");
-        } else{
-            printf("NO ERROR\n");
-        }
+    printf("\nRemainder at receiver: ");
+    for(int i=0; i<crc_len; i++){
+        printf("%d", remainder[i]);
+    }
+    int error = 0;
+    for(int i=0; i<crc_len; i++){
+        if(remainder[i] != 0) {error = 1; break;}
+    }
+    if(error){
+        printf("\nResult: ERROR\n");
     } else{
-        printf("Invalid parity!\n");
+        printf("\nNO ERROR\n");
     }
     return 0;
+
 }
