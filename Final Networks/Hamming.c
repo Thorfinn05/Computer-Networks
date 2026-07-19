@@ -40,10 +40,10 @@ int main(){
         if(!is_parityPos)
             hamming[i] = data[j++];
     }
-    printf("Hamming Code: ");
-    for(int i=total; i>=1; i--){
-        printf("%d", hamming[i]);
-    }
+    // printf("Hamming Code: ");
+    // for(int i=total; i>=1; i--){
+    //     printf("%d", hamming[i]);
+    // }
 
     // #3
     // ── STEP 3: Calculate parity bits ─────────────────
