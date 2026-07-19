@@ -1,90 +1,57 @@
-#include<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+// #include <unistd.h> // Using unistd.h for Ubuntu
+#include<windows.h>
+#define MAX_FRAMES 100
+#define TIMEOUT 2
+
+int is_success(int prob){
+    return (rand() % 100) < prob;
+}
 
 int main(){
-    int n;
-    printf("Enter number of data segments: ");
-    scanf("%d", &n);
+    int total_frames, window_size;
+    int sender_acked[MAX_FRAMES] = {0};
+    int receiver_buffer[MAX_FRAMES] = {0};
+    int base = 0;
+    int data_chance = 70;
+    int ack_chance = 70;
+    srand(time(NULL));
+    printf("ENter total frames: ");
+    scanf("%d", &total_frames);
+    printf("Enter window size: ");
+    scanf("%d", &window_size);
 
-    int segment_size;
-    printf("Enter segment size(bits): ");
-    scanf("%d", &segment_size);
-
-    int segments[10][16];
-    int sum[16] = {0};
-
-    for(int i=0; i<n; i++){
-        printf("Enter segment %d (%d bits): ", n, segment_size);
-        for(int j=0; j<segment_size; j++){
-            scanf("%d", &segments[i][j]);
-        }
-    }
-    //SENDER
-    for(int j=0; j<segment_size; j++){
-        sum[j] = segments[0][j];
-    }
-    for (int i=0; i<n; i++){
-        int carry = 0;
-        for(int j=segment_size; j>=0; j--){
-            int total = sum[j] + segments[i][j] + carry;
-            sum[j] = total % 2;
-            carry = total / 2;
-        }
-        if(carry){
-            for(int j=segment_size; j>=0; j--){
-                int total = sum[j] + carry;
-                sum[j] = total % 2;
-                carry = total / 2;
-                if(!carry) break;
+    while(base<total_frames){
+        for(int i=base; i<base+window_size && i<total_frames; i++){
+            if(!sender_acked[i]){
+                printf("SENDER: Sending Frame [%d]\n", i);
+                if(is_success(data_chance)){
+                    printf("-> RECEIVER: Received Frame [%d]\n", i);
+                    receiver_buffer[i] = 1;
+                    if(is_success(ack_chance)){
+                        printf("<- SENDER: Received Ack for Frame [%d]\n", i);
+                        sender_acked[i] = 1;
+                    } else{
+                        printf("<- SENDER: ACK for Frame [%d] LOST!\n", i);
+                        printf(" <- SENDER: Will Retransmit Frame [%d]\n", i);
+                    }
+                } else{
+                    printf("-> RECEIVER: Frame [%d] DATA LOST!\n", i);
+                    printf("<- SENDER: Will retransmit Frame [%d]\n", i);
+                }
             }
+            printf("\n");
         }
-    }
-
-    printf("\nSum of segments: ");
-    for(int j=0; j<segment_size; j++){
-        printf("%d", sum[j]);
-    }
-    int checksum[16];
-    for(int j = 0; j<segment_size; j++){
-        checksum[j] = sum[j] ^ 1;
-    }
-    printf("\nChecksum (1s complement of Sum): ");
-    for(int j=0; j<segment_size; j++){
-        printf("%d", checksum[j]);
-    }
-
-    //RECEIVER
-    int rec_sum[16];
-    for(int j=0; j<segment_size; j++){
-        rec_sum[j] = sum[j];
-    }
-    int carry = 0;
-    for(int j=segment_size; j>=0; j--){
-        int total = rec_sum[j] + checksum[j] + carry;
-        rec_sum[j] = total % 2;
-        carry = total / 2;
-    }
-    if(carry){
-        for(int j=segment_size; j>=0; j--){
-            int total = rec_sum[j] + carry;
-            rec_sum[j] = total % 2;
-            carry = total / 2;
-            if(!carry) break;
+        Sleep(TIMEOUT * 1000);
+        while(base<total_frames && sender_acked[base]){
+            printf("---WIndow Slid Forward! Frame [%d] is now the bottom boundary\n", base);
+            base++;
         }
+        printf("\n--------------\n");
     }
 
-    printf("\nReceiver sum: ");
-    for(int j=0; j<segment_size; j++){
-        printf("%d", rec_sum[j]);
-    }
-    int error=0;
-    for(int j=0; j,segment_size; j++){
-        if(rec_sum[j] != 1) { error = 1; break;}
-    }
-    if(error){
-        printf("ERROR\n");
-    } else {
-        printf("NO ERROR\n");
-    }
-
+    printf("\nSUCCESS!\n");
     return 0;
 }
