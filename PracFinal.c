@@ -40,9 +40,16 @@ int main(){
 
     printf("\n---PARITY CHECKER---\n");
     int rparity = 0;
+    // printf("Received Data: ");
+    // for(int i=0; i<=n; i++){
+    //    received[i] = transmitted[i];
+    //    printf("%d", received[i]);
+    // }
+    // printf("\n");
     printf("Enter received %d bits (including parity bit): ", n+1);
     for(int i=0; i<n+1; i++){
         scanf("%1d", &received[i]);
+        // rparity ^= received[i];
     }
     int ones = 0;
     for(int i=0; i<n+1; i++){
