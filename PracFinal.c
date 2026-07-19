@@ -1,95 +1,90 @@
 #include<stdio.h>
-#include<string.h>
-
-int data[100], divisor[20], remainder[20];
-int data_len, div_len;
-
-void xor(int a[], int b[], int len){
-    for(int i=0; i<len; i++){
-        a[i] = a[i] ^ b[i];
-    }
-}
-
-void crc_divide(int dividend[], int dlen){
-    int temp[20];
-    for(int i=0; i<div_len; i++){
-        temp[i] = dividend[i];
-    }
-    int pos = div_len;
-    while(pos <= dlen){
-        if(temp[0] == 1){
-            xor(temp, divisor, div_len);
-        } else{
-            int zeros[] = {0};
-            xor(temp, zeros, div_len);
-        }
-        if(pos < dlen){
-            for(int i=0; i<div_len; i++){
-                temp[i] = temp[i+1];
-            }
-            temp[div_len - 1] = dividend[pos];
-        }
-        pos++;
-    }
-    for(int i=0; i<div_len - 1; i++){
-        remainder[i] = temp[i+1];
-    }
-}
 
 int main(){
-    char d[100], g[20];
-    printf("Enter data: ");
-    scanf("%s", d),
-    printf("Enter divisor: ");
-    scanf("%s", g);
+    int n;
+    printf("Enter number of data segments: ");
+    scanf("%d", &n);
 
-    data_len = strlen(d);
-    div_len = strlen(g);
+    int segment_size;
+    printf("Enter segment size: ");
+    scanf("%d", &segment_size);
 
-    for(int i=0; i<data_len; i++) data[i] = d[i] - '0';
-    for(int i=0; i<div_len; i++) divisor[i] = g[i] - '0';
+    int segments[10][16];
+    int sum[16] = {0};
 
-    int crc_len = div_len - 1;
-    int augmented[20];
-
-    for(int i=0; i<data_len; i++) augmented[i] = data[i];
-    for(int i=0; i<crc_len; i++) augmented[data_len + i] = 0;
-
-    printf("Augmented data: ");
-    for(int i=0; i<data_len+crc_len; i++){
-        printf("%d", augmented[i]);
+    for (int i=0; i<n; i++){
+        printf("Enter segment %d (%d bits): ", i+1, segment_size);
+        for(int j=0; j<segment_size; j++){
+            scanf("%d", &segments[i][j]);
+        }
     }
 
-    crc_divide(augmented, data_len+crc_len);
-    printf("\nCRC Remainder: ");
-    for(int i=0; i<crc_len; i++){
-        printf("%d", remainder[i]);
+    for(int j = 0; j< segment_size; j++){
+        sum[j] = segments[0][j];
+    }
+    for(int i=1; i<n; i++){
+        int carry = 0;
+        for(int j=segment_size-1; j>=0; j--){
+            int total = sum[j] + segments[i][j] + carry;
+            sum[j] = total % 2;
+            carry = total / 2;
+        }
+        if(carry){
+            for(int j=segment_size - 1; j>=0; j--){
+                int total = sum[j] + carry;
+                sum[j] = total % 2;
+                carry = total / 2;
+                if(!carry) break;
+            }
+        }
     }
 
-    int transmitted[20];
-    for(int i=0; i<data_len; i++) transmitted[i] = data[i];
-    for(int i=0; i<crc_len; i++) transmitted[data_len + i] = remainder[i];
-
-    printf("\nTransmitted data: ");
-    for(int i=0; i<data_len+crc_len; i++){
-        printf("%d", transmitted[i]);
+    printf("\nSum of Segments: ");
+    for(int j=0; j<segment_size; j++){
+        printf("%d", sum[j]);
     }
 
-    crc_divide(transmitted, data_len + crc_len);
-
-    printf("\nRemainder at receiver: ");
-    for(int i=0; i<crc_len; i++){
-        printf("%d", remainder[i]);
+    int checksum[16];
+    for(int j=0; j<segment_size; j++){
+        checksum[j] = sum[j] ^ 1;
     }
+    printf("\nChecksum bits: ");
+    for(int j=0; j<segment_size; j++){
+        printf("%d", checksum[j]);
+    }
+
+    int rec_sum[16];
+    for(int j=0; j<segment_size; j++){
+        rec_sum[j] = sum[j];
+    }
+    int carry = 0;
+    for(int j=segment_size-1; j>=0; j--){
+        int total = rec_sum[j] + checksum[j] + carry;
+        rec_sum[j] = total % 2;
+        carry = total / 2;
+    }
+    if(carry){
+        for(int j=segment_size-1; j>=0; j--){
+            int total = rec_sum[j] + carry;
+            rec_sum[j] = total % 2;
+            carry = total / 2;
+            if(!carry) break;
+        }
+    }
+    printf("\nReceiver Sum: ");
+        for(int j=0; j<segment_size; j++){
+            printf("%d", rec_sum[j]);
+        }
+    
+
     int error = 0;
-    for(int i=0; i<crc_len; i++){
-        if(remainder[i] != 0) {error = 1; break;}
+    for(int j=0; j<segment_size; j++){
+        if(rec_sum[j] != 1) {error=1; break;}
     }
     if(error){
-        printf("\nResult: ERROR\n");
+        printf("ERROR"); 
     } else{
-        printf("\nNO ERROR\n");
+        printf("\n NO ERROR");
     }
     return 0;
-
 }
